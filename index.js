@@ -1,51 +1,56 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const models = require("./models");
 const port = 8080;
 
 app.use(express.json());
 app.use(cors());
 
 app.get("/products", (req, res) => {
-  const queryString = req.query;
-  console.log(queryString.id);
-  res.send({
-    products: [
-      {
-        id: 1,
-        name: "습식사료",
-        price: 10000,
-        seller: "내추럴코어",
-        imageUrl: "images/products/food1.jpg",
-      },
-      {
-        id: 2,
-        name: "하네스",
-        price: 50000,
-        seller: "도기멍",
-        imageUrl: "images/products/acc1.jpg",
-      },
-
-      {
-        id: 3,
-        name: "배변패드",
-        price: 30000,
-        seller: "흡수혁명",
-        imageUrl: "images/products/house1.jpg",
-      },
-    ],
-  });
+  models.Product.findAll({limit:1})
+    .then((result) => {
+            res.send({
+        product: result,
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.send("에러발생");
+    });
 });
 
-app.get("/products/:id/events/:eventId", (req, res) => {
+app.get("/products/:id", (req, res) => {
   const params = req.params;
-  const { id, eventId} = params;
-  res.send(`id는 ${id}와 ${eventId}입니다`);
+  const { id } = params;
+  models.Product.findOne({
+    where: { id: id },
+  })
+    .then((result) => {
+      console.log("product:", result);
+      res.send({product:result})
+    })
+    .catch((error) => {
+      console.error();
+      res.send('상품조회시 에러가 발생했습니다')
+    });
 });
 
 app.post("/products", (req, res) => {
   const body = req.body;
-  res.send({ body: body });
+  const { name, price, seller, description, imageUrl } = body;
+  if (!name || !price || !seller || !description) {
+    res.send("모든 필드를 입력해주세요");
+  }
+  models.Product.create({ name, price, seller, description, imageUrl })
+    .then((result) => {
+      console.log("상품생성결과", result);
+      res.send({ result });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.send("상품업로드에 문제가 발생하였습니다");
+    });
 });
 
 app.post("/login", (req, res) => {
@@ -54,4 +59,14 @@ app.post("/login", (req, res) => {
 
 app.listen(port, () => {
   console.log("망고샵의 서버가 돌아가고 있습니다.");
+  models.sequelize
+    .sync()
+    .then(() => {
+      console.log("🎃DB연결성공");
+    })
+    .catch((err) => {
+      console.error(err);
+      console.log("✂DB연결실패");
+      process.exit();
+    });
 });
