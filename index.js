@@ -8,9 +8,12 @@ app.use(express.json());
 app.use(cors());
 
 app.get("/products", (req, res) => {
-  models.Product.findAll({limit:1})
+  models.Product.findAll({
+    order: [["createdAt", "DESC"]], //ASC
+    attributes:["id","name","price","seller","description","imageUrl","createdAt"]
+  })
     .then((result) => {
-            res.send({
+      res.send({
         product: result,
       });
     })
@@ -28,11 +31,11 @@ app.get("/products/:id", (req, res) => {
   })
     .then((result) => {
       console.log("product:", result);
-      res.send({product:result})
+      res.send({ product: result });
     })
     .catch((error) => {
       console.error();
-      res.send('상품조회시 에러가 발생했습니다')
+      res.send("상품조회시 에러가 발생했습니다");
     });
 });
 
